@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken')// permet de créer un token
 const mysql = require('mysql2/promise');// permet d'utilister mysql en async
 const bcrypt = require('bcrypt'); // Hash le mot de passe
 const { Router } = require('express');
+const { token } = require('morgan');
 
 
 // permet de se co à la database
@@ -47,18 +48,20 @@ router.get('/me', verifyToken, (req, res) => {
   return res.json( decoded )
 
 })
-////////////////////////////// recupération des info de l'user ///////////////////////////////////////
-router.get('/users', async (req, res) => {
+
+
+//////////////////////////////////// récupère les infos de l'utilisateur ////////////////////////////////////
+router.get('/:UserID', verifyToken, async (req, res) =>{
 
   db = await connectionDB()
-  const [result] = await db.query("SELECT UserID, username, email, adresse FROM users")
-  return res.json(result)
+  const [result] = await db.query(`SELECT username FROM users WHERE UserID = ${req.params.UserID}`)
+  return res.status(200).json(result)
 })
 
 ////////////////////////////// Modification user ///////////////////////////////////////
 router.put('/:UserID', verifyToken, async (req, res) => {
-  if (!req.body.username || !req.body.password || !req.body.email || !req.body.adresse) {
-    return res.status(400).json({ message: 'Error. Please enter username, password, email and adresse' })
+  if (!req.body.username || !req.body.password ) {
+    return res.status(400).json({ message: 'Error. Please enter username' })
   }
   const Token = req.headers.authorization
   const decoded = jwt.decode(Token, { complete: false })
@@ -77,24 +80,14 @@ router.put('/:UserID', verifyToken, async (req, res) => {
 
   var salt = await bcrypt.genSalt(10)
   passwordHash = await bcrypt.hash(req.body.password, salt)
-  const [result] = await db.query(`UPDATE users SET username = '${req.body.username}', password = '${passwordHash}', email = '${req.body.email}', adresse = '${req.body.adresse}'  WHERE UserID = ${decoded.UserID}`)
+  const [result] = await db.query(`UPDATE users SET username = '${req.body.username}', password = '${passwordHash}' WHERE UserID = ${decoded.UserID}`)
   console.log(result)
-  return res.json(result)
-})
-////////////////////////////// récupération des information d'un user ///////////////////////////////////////
-router.get('/:UserID', async (req, res) => {
-
-  db = await connectionDB()
-  const [result] = await db.query(`SELECT UserID, username, email, adresse FROM users WHERE UserID = ${req.params.UserID}`)
   return res.json(result)
 })
 
 
 ////////////////////////////// Delete user ///////////////////////////////////////
 router.delete('/:UserID', verifyToken, async (req, res) => {
-
-  const Token = req.headers.authorization
-  const decoded = jwt.decode(Token, { complete: false })
 
   db = await connectionDB()
 
@@ -104,13 +97,6 @@ router.delete('/:UserID', verifyToken, async (req, res) => {
 
 })
 
-//////////////////////////////////// récupère tous les produits existants concernant un utilisateur ////////////////////////////////////
-router.get(':UserID/products', async (req, res) =>{
-
-  db = await users.connectionDB()
-  const [result] = await db.query(`SELECT * FROM products WHERE UserID = ${req.params.UserID}`)
-  return res.json(result)
-})
 
 module.exports = { router, connectionDB, verifyToken }
 

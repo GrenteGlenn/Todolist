@@ -14,12 +14,13 @@ router.post('/',async(req, res) => {
         return res.status(400).json({ message: 'Error. Please enter the correct username and password' })
     }
     db = await users.connectionDB()
-    const [result] = await db.query(`SELECT UserID, username, password, email, role, adresse FROM users WHERE username = '${req.body.username}'`)
+    const [result] = await db.query(`SELECT * FROM users WHERE username = '${req.body.username}'`)
     if (result.length === 0)
       {
         return res.status(401).json({message:'no user'});
       }
-      const match = await bcrypt.compare(req.body.password,result[0].password)
+
+      const match = bcrypt.compareSync(req.body.password,result[0].password)
         if(!match) {
         
           return res.status(401).json({error: 'Incorrect password !'})
@@ -28,9 +29,7 @@ router.post('/',async(req, res) => {
       const token = jwt.sign ({
         UserID: result[0].UserID,
         username: result[0].username,
-        email: result[0].email,
-        adresse: result[0].adresse,
-        role: result[0].role
+       
         
       },SECRET, { expiresIn: '8 hours' })
       return res.json({access_token: token})

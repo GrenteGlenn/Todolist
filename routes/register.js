@@ -7,7 +7,7 @@ users.connectionDB() // import connection à la DB
 
 ////////////////////////////// Register ///////////////////////////////////////
 router.post('/',async (req,res) => {
-    if (!req.body.username || !req.body.password || !req.body.email || !req.body.adresse) {
+    if (!req.body.username || !req.body.password) {
       return res.status(400).json({ message: 'Error. Please enter username and password' })
     }
     db = await users.connectionDB()
@@ -18,7 +18,7 @@ router.post('/',async (req,res) => {
     else{
       var salt = await bcrypt.genSalt(10)
       passwordHash = await bcrypt.hash(req.body.password, salt)
-      db.query(`INSERT INTO users (username, password, role, email, adresse) VALUES ('${req.body.username}', '${passwordHash}', 'user', '${req.body.email}', '${req.body.adresse}')`)
+      db.query(`INSERT INTO users (username, password) VALUES ('${req.body.username}', '${passwordHash}')`)
       return res.status(201).json({ message: `User created`})
     }
 })
